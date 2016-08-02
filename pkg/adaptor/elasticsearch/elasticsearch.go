@@ -128,6 +128,7 @@ func (e *Elasticsearch) applyOp(msg *message.Msg) (*message.Msg, error) {
 	// TODO there might be some inconsistency here.  elasticsearch uses the _id field for an primary index,
 	//  and we're just mapping it to a string here.
 	id, err := msg.IDString("_id")
+	escapedId := strings.TrimSuffix(strings.TrimPrefix(strconv.Quote(strings.Replace(id,"\\\"","\"",-1)),"\""),"\"")
 	if err != nil {
 		id = ""
 	}
@@ -139,10 +140,10 @@ func (e *Elasticsearch) applyOp(msg *message.Msg) (*message.Msg, error) {
 	}
 	switch msg.Op {
 	case message.Delete:
-		e.indexer.Delete(e.index, _type, id, false)
+		e.indexer.Delete(e.index, _type, escapedId, false)
 		err = nil
 	default:
-		err = e.indexer.Index(e.index, _type, id, "", "", nil, msg.Data, false)
+		err = e.indexer.Index(e.index, _type, escapedId, "", "", nil, msg.Data, false)
 	}
 	if err != nil {
 		e.pipe.Err <- adaptor.NewError(adaptor.ERROR, e.path, fmt.Sprintf("elasticsearch error (%s)", err), msg.Data)

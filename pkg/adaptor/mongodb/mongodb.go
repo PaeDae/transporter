@@ -190,14 +190,15 @@ func (m *Mongodb) Start() (err error) {
 		fmt.Printf("setting start timestamp: %d\n", m.oplogTime)
 	}
 
-	err = m.catData()
-	if err != nil {
-		m.pipe.Err <- err
-		return err
-	}
 	if m.tail {
 		// replay the oplog
 		err = m.tailData()
+		if err != nil {
+			m.pipe.Err <- err
+			return err
+		}
+	} else {
+		err = m.catData()
 		if err != nil {
 			m.pipe.Err <- err
 			return err
